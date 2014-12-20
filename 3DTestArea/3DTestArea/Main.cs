@@ -38,7 +38,9 @@ namespace _3DTestArea
         Matrix viewMatrix;
         Matrix projectionMatrix;
         int[] indices;
- 
+
+        VertexBuffer myVertexBuffer;
+        IndexBuffer myIndexBuffer;
         private float angle = 0f;
         private int terrainWidth = 4;
         private int terrainHeight = 3;
@@ -86,6 +88,8 @@ namespace _3DTestArea
             SetUpVertices();
             SetUpIndices();
             CalculateNormals();
+
+            CopyToBuffers();
             // TODO: use this.Content to load your game content here
         }
 
@@ -194,7 +198,14 @@ protected override void UnloadContent()
              viewMatrix = Matrix.CreateLookAt(new Vector3(60, 80, -80), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
              projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 300.0f);
          }
- 
+         private void CopyToBuffers()
+         {
+             myVertexBuffer = new VertexBuffer(device, VertexPositionColorNormal.VertexDeclaration, vertices.Length, BufferUsage.WriteOnly);
+             myVertexBuffer.SetData(vertices);
+
+             myIndexBuffer = new IndexBuffer(device, typeof(int), indices.Length, BufferUsage.WriteOnly);
+             myIndexBuffer.SetData(indices);
+         }
          protected override void Update(GameTime gameTime)
          {
              if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
@@ -203,7 +214,7 @@ protected override void UnloadContent()
              KeyboardState keyState = Keyboard.GetState();
              if (keyState.IsKeyDown(Keys.E))
                  angle += 0.05f;
-             if (keyState.IsKeyDown(Keys.D))
+             if (keyState.IsKeyDown(Keys.Q))
                  angle -= 0.05f;
  
              base.Update(gameTime);
@@ -231,8 +242,10 @@ protected override void UnloadContent()
              foreach (EffectPass pass in effects.CurrentTechnique.Passes)
              {
                  pass.Apply();
- 
-                 device.DrawUserIndexedPrimitives<VertexPositionColorNormal>(PrimitiveType.TriangleList, vertices, 0, vertices.Length, indices, 0, indices.Length / 3, VertexPositionColorNormal.VertexDeclaration);
+
+                 device.Indices = myIndexBuffer;
+                 device.SetVertexBuffer(myVertexBuffer);
+                 device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, vertices.Length, 0, indices.Length / 3);
              }
  
              base.Draw(gameTime);
